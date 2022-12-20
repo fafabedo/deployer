@@ -1,0 +1,16 @@
+{
+  "name": "edelman_deployer",
+  "version": "1.0.0",
+  "description": "Edelman Deployer using rsync, extractor",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "extract-zip": "^2.0.1",
+    "rsync": "^0.6.1"
+  },
+  "scripts": {
+    "deployer": "node index.js"
+  },
+  "main": "index.js",
+  "repository": "git clone git@bitbucket.org:edelmandigitalmontreal/deployer.git"
+}
