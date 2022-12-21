@@ -60,4 +60,12 @@ program
   .description("Extract plugins")
   .action(getLocalScript("extractor"));
 
+program
+  .command("deploy")
+  .alias("deploy")
+  .description("Deployer code")
+  .option("-c, --config <config>", "Configuration file")
+  .action(getLocalScript("extractor"));
+
+// console.log("process.cwd(): ", process.cwd());
 program.parse(process.argv);
