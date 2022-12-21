@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "description": "Edelman Deployer using rsync, extractor",
   "license": "MIT",
-  "type": "module",
-  "dependencies": {
-    "extract-zip": "^2.0.1",
-    "rsync": "^0.6.1"
-  },
-  "scripts": {
-    "deployer": "node index.js"
-  },
   "main": "index.js",
-  "repository": "git clone git@bitbucket.org:edelmandigitalmontreal/deployer.git"
+  "scripts": {
+    "deployer": "node ./bin/deployer.js"
+  },
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "commander": "^9.4.1",
+    "dotenv": "^16.0.3",
+    "extract-zip": "^2.0.1",
+    "js-yaml": "^4.1.0",
+    "resolve-cwd": "^3.0.0",
+    "rsync": "^0.6.1"
+  }
 }
