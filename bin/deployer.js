@@ -17,7 +17,7 @@ const getLocalScript =
       console.log(
         `Error loading the local ${yellow(
           name
-        )} command. Strapi might not be installed in your "node_modules". You may need to run "npm install"`
+        )} command. `
       );
       process.exit(1);
     }
@@ -61,11 +61,11 @@ program
   .action(getLocalScript("extractor"));
 
 program
-  .command("deploy")
+  .command("deploy:run")
   .alias("deploy")
   .description("Deployer code")
   .option("-c, --config <config>", "Configuration file")
-  .action(getLocalScript("extractor"));
+  .action(getLocalScript("deployer"));
 
 // console.log("process.cwd(): ", process.cwd());
 program.parse(process.argv);
