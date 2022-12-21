@@ -65,6 +65,7 @@ program
   .alias("deploy")
   .description("Deployer code")
   .option("-c, --config <config>", "Configuration file")
+  .option("-s, --stage <stage>", "Stage to deploy")
   .action(getLocalScript("deployer"));
 
 // console.log("process.cwd(): ", process.cwd());
