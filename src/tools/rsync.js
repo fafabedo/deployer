@@ -5,6 +5,7 @@ class RsyncManager {
     this._source = null;
     this._shell = 'ssh';
     this._flags = 'azr';
+    this.user = null;
     this._destination_host = '127.0.0.1';
     this._destination_path = '/tmp';
   }
@@ -20,6 +21,10 @@ class RsyncManager {
     this._flags = _flags;
     return this;
   }
+  user(_user) {
+    this._user = _user;
+    return this;
+  }
   destinationHost(host) {
     this._destination_host = host;
     return this;
@@ -29,7 +34,7 @@ class RsyncManager {
     return path;
   }
   execute() {
-    const destination = `${this._destination_host}:${this._destination_path}`;
+    const destination = `${this._user}@${this._destination_host}:${this._destination_path}`;
     const rsync = new Rsync()
       .set('progress')
       .shell(this._shell)

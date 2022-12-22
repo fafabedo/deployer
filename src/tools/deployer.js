@@ -1,4 +1,5 @@
 const Config = require("./config");
+const Rsync = require("./rsync");
 
 class DeployerManager {
   constructor() {
@@ -6,9 +7,7 @@ class DeployerManager {
     this._stage = null;
   }
   config(config) {
-    this._config = Config
-      .loadFile(config);
-    // console.log(this._config);
+    this._config = Config.loadFile(config);
     return this;
   }
   stage(_stage) {
@@ -20,7 +19,15 @@ class DeployerManager {
     return stages.find(item => item.id() === this._stage);
   }
   execute() {
-    const stageInfo = this.stageConfig();
+    const stageConfig = this.stageConfig();
+    stageConfig.host().forEach(host => {
+      Rsync
+        .source(this._config.projectPath())
+        .destinationHost(host)
+        .destinationPath(stageConfig.destinationPath());
+    })
+
+
   }
 
 }
