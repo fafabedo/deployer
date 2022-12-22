@@ -20,12 +20,16 @@ class DeployerManager {
   }
   execute() {
     const stageConfig = this.stageConfig();
-    stageConfig.host().forEach(host => {
-      Rsync
-        .source(this._config.projectPath())
-        .destinationHost(host)
-        .destinationPath(stageConfig.destinationPath());
-    })
+    const hosts = stageConfig.host();
+    hosts.forEach(host => {
+      console.log(host);
+    });
+    // stageConfig.host().forEach(host => {
+    //   Rsync
+    //     .source(this._config.projectPath())
+    //     .destinationHost(host)
+    //     .destinationPath(stageConfig.destinationPath());
+    // })
 
 
   }

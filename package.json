@@ -13,6 +13,7 @@
     "dotenv": "^16.0.3",
     "extract-zip": "^2.0.1",
     "js-yaml": "^4.1.0",
+    "node-ssh": "^13.0.0",
     "resolve-cwd": "^3.0.0",
     "rsync": "^0.6.1"
   }

@@ -2,7 +2,6 @@
 class Stage {
   constructor() {
     this._id = null;
-    this._group = null;
     this._host = null;
     this._username = null;
     this._password = null;
@@ -10,7 +9,6 @@ class Stage {
   }
   load(stage) {
     this._id = stage && stage.id;
-    this._group = stage && stage.group;
     this._host = stage && stage.host;
     this._username = stage && stage.username;
     this._password = stage && stage.password;
