@@ -113,7 +113,6 @@ class FileSystemHelper {
           }
           if (result.stderr) {
             this._logger.error(result.stderr);
-            // console.error(result.stderr)
             reject(false);
           }
           reject(false);
@@ -128,11 +127,9 @@ class FileSystemHelper {
   checkFolder(path) {
     return new Promise((resolve, reject) => {
       this._logger.info(`Checking folder [${path}] ...`);
-      // console.log(`Checking folder [${path}] ...`);
       this.sshExec(`ls ${path} -al`)
         .then((result) => {
           if (result.stdout) {
-            // console.log(`[${path}] folder checked`);
             this._logger.info(`[${path}] folder checked`);
             resolve(true);
           }
@@ -143,7 +140,6 @@ class FileSystemHelper {
         })
         .catch((err) => {
           this._logger.error(err);
-          // console.error(err);
           reject(false);
         });
     });
@@ -153,13 +149,11 @@ class FileSystemHelper {
       this._logger.info(`Creating folder [${path}] ...`);
       this.sshMkdir(`${path}`)
         .then((result) => {
-          // console.log(`[${path}] folder created`);
           this._logger.info(`[${path}] folder created`);
           resolve(true);
         })
         .catch((err) => {
           this._logger.error(err);
-          // console.log(`error mkdir operation`, err);
           reject(false);
         });
     });
@@ -219,22 +213,19 @@ class FileSystemHelper {
       const path = this._stage.path();
       this.getListReleases()
       .then(async (releases) => {
-        this._logger.info(releases);
-        // console.log(releases);
         const last_release = releases && releases[0];
-        console.log(last_release);
-        this._logger.info({last: last_release});
         const new_release = this.nextReleaseNumber(last_release);
-        this._logger.info({next: new_release});
-        // console.log(new_release);
         const releasePath = `${path}${new_release}`;
         const createReleasesFolder = await this.createFolder(releasePath);
         if (!createReleasesFolder) {
+          this._logger.error("An error occurred creating release folder");
           reject(false);
         }
+        this._logger.info({release: {last: last_release, new: new_release, path: createReleasesFolder}});
         resolve(releasePath);
       })
       .catch(err => {
+        this._logger.error(err);
         reject(false);
       })
     })

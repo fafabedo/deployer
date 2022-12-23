@@ -1,5 +1,5 @@
 const fs = require("fs");
-// const chalk = require("chalk");
+const chalk = require("chalk");
 
 class Logger {
   constructor() {
@@ -29,14 +29,14 @@ class Logger {
     });
     return filename;
   }
-  log(message, type) {
+  log(type, message) {
     if (this._verbose) {
       switch(type) {
         case 'info':
-          console.log(message);
+          console.log(chalk.white(message));
           break;
         case 'warning':
-          console.log(message);
+          console.log(chalk.yellow(message));
           break;
         case 'error':
           console.log(message);
@@ -60,16 +60,16 @@ class Logger {
     }
   }
   success(message) {
-    this.log(message, 'success');
+    this.log('success', message);
   }
   info(message) {
-    this.log(message, 'info');
+    this.log('info', message);
   }
   warn(message) {
-    this.log(message, 'warning');
+    this.log('warning', message);
   }
   error(message) {
-    this.log(message, 'error');
+    this.log('error', message);
   }
 
 }
