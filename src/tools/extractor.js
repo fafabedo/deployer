@@ -1,49 +1,58 @@
-const extract = require('extract-zip');
-const fs = require('fs');
+const extract = require("extract-zip");
+const fs = require("fs");
 
 class Extractor {
   constructor() {
     this.debug = false;
-    this.source = __dirname;
-    this.destination = "/tmp";
+    this._source = __dirname;
+    this._destination = "/tmp";
+    this._logger = null;
   }
-  setDebug(debug) {
-    this.debug = debug;
+  setDestination(_destination) {
+    this._destination = _destination;
+    return this;
   }
-  setDestination(destination) {
-    this.destination = destination;
+  setSource(_source) {
+    this._source = _source;
+    return this;
   }
-  setSource(source) {
-    this.source = source;
+  setLogger(_logger) {
+    this._logger = _logger;
+    return this;
   }
   getFolderName(file) {
-    let regex = /([^\.]*)\.([0-9|\.]*)\.zip/gi
+    let regex = /([^\.]*)\.([0-9|\.]*)\.zip/gi;
     let match = regex.exec(file);
     if (match) {
-        return match[1];
+      return match[1];
     }
     return null;
   }
-  extract() {
-    try {
-      let files = [];
-      if (options) {
-          console.log(`Destination: `);
-      }
-      fs.readdirSync('./packages').forEach(file => {
+  async execute() {
+    return new Promise((resolve, reject) => {
+      try {
+        let files = [];
+        const source = process.cwd() + "/" + this._source;
+        const destination = process.cwd() + "/" + this._destination;
+        fs.readdirSync(source).forEach((file) => {
           files.push(file);
-      });
-      files.forEach(async (file) => {
-          let folderName = this.getFolderName(file);
-          if (folderName) {
-              console.log(`Extracting package: ${file} | target ${target} | folder ${folderName}`);
-              await extract(`./packages/${file}`, { dir: target });
+        });
+        files.forEach(async (file) => {
+          let pluginName = this.getFolderName(file);
+          if (pluginName) {
+            this._logger && this._logger.info(`Extracting package: ${file} | target ${destination} | plugin ${pluginName}`);
+            await extract(`${source}/${file}`, { dir: destination });
           }
-      })
-      console.log('Extraction complete');
-  } catch (err) {
-      console.log('Error found in extraction');
-      console.log(err);
-  }
+        });
+        this._logger && this._logger.info("Extraction complete");
+        resolve(true);
+      } catch (err) {
+        this._logger.error(err);
+        reject(err);
+      }
+    })
+    
   }
 }
+
+module.exports = Extractor;

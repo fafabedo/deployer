@@ -158,6 +158,20 @@ class FileSystemHelper {
         });
     });
   }
+  removeFolder(path) {
+    return new Promise((resolve, reject) => {
+      this._logger.info(`Creating folder [${path}] ...`);
+      this.sshExec(`rm -rf ${path}`)
+        .then((result) => {
+          this._logger.info(`[${path}] folder removed`);
+          resolve(true);
+        })
+        .catch((err) => {
+          this._logger.error(err);
+          reject(false);
+        });
+    });
+  }
   checkFolderStructure() {
     return new Promise(async (resolve, reject) => {
       let folderCheck = true;
@@ -218,10 +232,11 @@ class FileSystemHelper {
         const releasePath = `${path}${new_release}`;
         const createReleasesFolder = await this.createFolder(releasePath);
         if (!createReleasesFolder) {
-          this._logger.error("An error occurred creating release folder");
+          this._logger && this._logger.error("An error occurred creating release folder");
+          this._stage.setRelease(new_release);
           reject(false);
         }
-        this._logger.info({release: {last: last_release, new: new_release, path: createReleasesFolder}});
+        this._logger && this._logger.info({release: {last: last_release, new: new_release, path: createReleasesFolder}});
         resolve(releasePath);
       })
       .catch(err => {
@@ -230,6 +245,31 @@ class FileSystemHelper {
       })
     })
 
+  }
+  clearReleases() {
+    return new Promise(async (resolve, reject) => {
+      const path = this._stage.getPath();
+      const keep = this._stage.getKeepReleases();
+      this.getListReleases()
+      .then(async (releases) => {
+        if (releases.length <= keep) {
+          resolve(true);
+        }
+        while (releases.length > keep) {
+          const olderRelease = releases.pop();
+          const releasePath = `${path}${olderRelease}`;
+          const removedFolder = await this.removeFolder(releasePath);
+          if (!removedFolder) {
+            this._logger && this._logger.error("An error occurred removing release folder")
+          }
+        }
+        resolve(releases);
+      })
+      .catch(err => {
+        this._logger.error(err);
+        reject(false);
+      })
+    });
   }
 }
 

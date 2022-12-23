@@ -4,6 +4,7 @@ const Config = require("./config");
 const Rsync = require("./rsync");
 const FileSystem = require("./file_system");
 const Logger = require("./logger");
+const Extractor = require("./extractor");
 
 const logger = new Logger();
 logger.setVerbose(true);
@@ -17,6 +18,7 @@ class DeployerManager {
     this._config = null;
     this._stage = null;
     this._log_folder = null;
+    this._release = null;
   }
   config(config) {
     this._config = Config.loadFile(config);
@@ -29,6 +31,9 @@ class DeployerManager {
   stageConfig() {
     const stages = this._config.stages();
     return stages.find((item) => item.id() === this._stage);
+  }
+  setRelease(_release) {
+    this._release = _release;
   }
   fileSystem(config, host) {
     const fileSystem = FileSystem.setLogger(logger)
@@ -80,7 +85,15 @@ class DeployerManager {
           this._task_callback = this.taskRelease;
           break;
         case "deploy:clear":
+          this._task_callback = this.taskClear;
+          break;
+        case "deploy:symlink":
+          this._task_callback = this.taskSymlink;
+          break;
         case "deploy:success":
+          logger.success({ task: task, host: host, completed: true });
+          resolve(true);
+          break;
         default:
           break;
       }
@@ -167,6 +180,7 @@ class DeployerManager {
       fsManager.setLogger(logger).setHost(host).setStage(config);
       this.createRelease(fsManager)
         .then((releaseFolder) => {
+          this.setRelease(releaseFolder)
           const method = config.getMethod();
           this._update_callback = null;
           switch(method) {
@@ -193,14 +207,47 @@ class DeployerManager {
   }
   async taskExtract(config, host) {
     return new Promise((resolve, reject) => {
+      const extractor = new Extractor();
+      const source = config.getExtractSource();
+      const destination = config.getExtractDestination();
+      extractor
+        .setLogger(logger)
+        .setSource(source)
+        .setDestination(destination)
+        .execute()
+        .then((res) => {
+          resolve(true);
+        })
+        .catch((err) => {
+          reject(err);
+        })
+      resolve(true);
+    });
+  }
+  async taskSymlink(config, host) {
+    return new Promise((resolve, reject) => {
+      const fsManager = new FileSystem();
+      fsManager.setLogger(logger)
+        .setHost(host)
+        .setStage(config);
+
+      console.log(`symlink`, this._release)
       resolve(true);
     });
   }
   async taskClear(config, host) {
     return new Promise((resolve, reject) => {
       const fsManager = new FileSystem();
-      fsManager.setLogger(logger).setHost(host).setStage(config);
-      const releases = fsManager.getListReleases();
+      fsManager.setLogger(logger)
+        .setHost(host)
+        .setStage(config);
+      fsManager.clearReleases()
+        .then((res) => {
+          resolve(res);
+        })
+        .catch((err) => {
+          reject(err);
+        });
     });
   }
   async updateCodeRsync(config, host, releaseFolder) {

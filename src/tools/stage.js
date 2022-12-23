@@ -8,6 +8,7 @@ class Stage {
     this._private_key = null;
     this._path = null;
     this._config = null;
+    this._release = null;
   }
   load(stage, config) {
     this._id = stage && stage.id;
@@ -21,7 +22,10 @@ class Stage {
   id() {
     return this._id;
   }
-  group() {
+  setRelease(_release) {
+    this._release = _release;
+  }
+  getGroup() {
     return this._group;
   }
   getHost() {
