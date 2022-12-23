@@ -31,19 +31,24 @@ class Logger {
   }
   log(type, message) {
     if (this._verbose) {
+      const typePrefix = `[${type}]`;
+      const messageString = JSON.stringify(message);
       switch(type) {
         case 'info':
         default:
-          console.log(chalk.whiteBright(message));
+          console.log(chalk.cyan(typePrefix), messageString);
+          // console.log({type: "[info]", message: message});
           break;
         case 'warning':
-          console.log(chalk.yellow(message));
+          console.log(chalk.yellow(typePrefix), messageString);
           break;
         case 'error':
-          console.log(chalk.red(message));
+          // console.log({type: "[err]", message: message});
+          console.log(chalk.red(typePrefix), messageString);
           break;
         case 'success':
-          console.log(chalk.green(message));
+          // console.log({type: "[success]", message: message});
+          console.log(chalk.green(typePrefix), messageString);
           break;
       }
     }

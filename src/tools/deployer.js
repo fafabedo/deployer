@@ -1,7 +1,8 @@
+const fs = require("fs");
+const moment = require("moment");
 const Config = require("./config");
 const Rsync = require("./rsync");
 const FileSystem = require("./file_system");
-const fs = require("fs");
 const Logger = require("./logger");
 
 const logger = new Logger();
@@ -64,7 +65,7 @@ class DeployerManager {
       }
     });
   }
-  async executeTask(stageConfig, host) {
+  async executeTask2(stageConfig, host) {
     const fileSystem = this.fileSystem(stageConfig, host);
     // Check folder structure
     const folderStructure = await this.folderStructure(fileSystem);
@@ -99,24 +100,32 @@ class DeployerManager {
     return new Promise((resolve, reject) => {
       this._task_callback = null;
       switch (task) {
+        case "deploy:extract":
+          this._task_callback = this.taskExtract;
+          break;
         case "deploy:check":
           this._task_callback = this.taskCheck;
           break;
         case "deploy:release":
           this._task_callback = this.taskRelease;
           break;
+        case "deploy:update_code":
+          this._task_callback = this.taskUpdateCode;
         default:
           break;
       }
       if (!this._task_callback) {
         logger.info({task: task, status: "skipped"});
+        resolve(true);
       }
       this._task_callback(config, host)
         .then((res) => {
           logger.success({task: task, host: host, completed: true});
+          resolve(true);
         })
         .catch((err) => {
           logger.error(err);
+          reject(err);
         })
     });
   }
@@ -146,8 +155,10 @@ class DeployerManager {
   async execute() {
     return new Promise((resolve, reject) => {
       const stageConfig = this.stageConfig();
+      const date = moment().format("YYYY/MM/DD hh:mm:ss");
+      const app = stageConfig.getApplication();
       logger.info(
-        `Deployment ${stageConfig.getApplication()} 11-22-2022 - 11:11:22 `
+        `Processing deployment ${app} ${date} `
       );
       this.executeAllTasks(stageConfig)
         .then((res) => {
@@ -186,6 +197,16 @@ class DeployerManager {
           logger.error(err);
           reject(err);
         });
+    });
+  }
+  async taskExtract(config, host) {
+    return new Promise((resolve, reject) => {
+      resolve(true);
+    });
+  }
+  async taskUpdateCode(config, host) {
+    return new Promise((resolve, reject) => {
+      resolve(true);
     });
   }
 }
