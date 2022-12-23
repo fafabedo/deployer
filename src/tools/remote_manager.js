@@ -5,7 +5,7 @@ const Stage = require("./stage");
 
 const ssh = new NodeSSH();
 
-class FileSystemHelper {
+class RemoteManager {
   constructor() {
     this._path = null;
     this._stage = null;
@@ -58,7 +58,30 @@ class FileSystemHelper {
       let credentials = this.getCredentials();
       return ssh.connect(credentials);
   }
-  sshExec(command, cwd) {
+  async sshExec(command, params) {
+    return new Promise((resolve, reject) => {
+      try {
+        this.ssh()
+          .then(() => {
+            ssh
+              .exec(command, [])
+              .then((result) => {
+                resolve(result);
+              })
+              .catch((err) => {
+                reject(err);
+              });
+          })
+          .catch((err) => {
+            this._logger.error(err);
+            reject(err);
+          });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+  async sshExecCommand(command, cwd) {
     return new Promise((resolve, reject) => {
       try {
         this.ssh()
@@ -81,7 +104,7 @@ class FileSystemHelper {
       }
     });
   }
-  sshMkdir(path) {
+  async sshMkdir(path) {
     return new Promise((resolve, reject) => {
       try {
         this.ssh()
@@ -103,10 +126,10 @@ class FileSystemHelper {
       }
     });
   }
-  checkPermissions() {
+  async checkPermissions() {
     return new Promise((resolve, reject) => {
       const path = this._stage.getPath();
-      this.sshExec(`touch _perm.txt`, path)
+      this.sshExecCommand(`touch _perm.txt`, path)
         .then((result) => {
           if (result.stdout) {
             resolve(true);
@@ -124,10 +147,10 @@ class FileSystemHelper {
         });
     });
   }
-  checkFolder(path) {
+  async checkFolder(path) {
     return new Promise((resolve, reject) => {
       this._logger.info(`Checking folder [${path}] ...`);
-      this.sshExec(`ls ${path} -al`)
+      this.sshExecCommand(`ls ${path} -al`)
         .then((result) => {
           if (result.stdout) {
             this._logger.info(`[${path}] folder checked`);
@@ -144,7 +167,7 @@ class FileSystemHelper {
         });
     });
   }
-  createFolder(path) {
+  async createFolder(path) {
     return new Promise((resolve, reject) => {
       this._logger.info(`Creating folder [${path}] ...`);
       this.sshMkdir(`${path}`)
@@ -158,10 +181,10 @@ class FileSystemHelper {
         });
     });
   }
-  removeFolder(path) {
+  async removeFolder(path) {
     return new Promise((resolve, reject) => {
       this._logger.info(`Creating folder [${path}] ...`);
-      this.sshExec(`rm -rf ${path}`)
+      this.sshExecCommand(`rm -rf ${path}`)
         .then((result) => {
           this._logger.info(`[${path}] folder removed`);
           resolve(true);
@@ -172,7 +195,7 @@ class FileSystemHelper {
         });
     });
   }
-  checkFolderStructure() {
+  async checkFolderStructure() {
     return new Promise(async (resolve, reject) => {
       let folderCheck = true;
       const releasesCheck = await this.checkFolder(this.getReleasesPath());
@@ -195,9 +218,9 @@ class FileSystemHelper {
       resolve(folderCheck);
     });
   }
-  getListReleases() {
+  async getListReleases() {
     return new Promise((resolve, reject) => {
-      this.sshExec(`ls -c -d -1 releases/*`, this._stage.getPath())
+      this.sshExecCommand(`ls -c -d -1 releases/*`, this._stage.getPath())
         .then((result) => {
           if (result.code === 1) {
             reject(result.stderr);
@@ -222,7 +245,7 @@ class FileSystemHelper {
     }
     return `releases/1`;
   }
-  createReleasePath() {
+  async createReleasePath() {
     return new Promise(async (resolve, reject) => {
       const path = this._stage.getPath();
       this.getListReleases()
@@ -246,7 +269,7 @@ class FileSystemHelper {
     })
 
   }
-  clearReleases() {
+  async clearReleases() {
     return new Promise(async (resolve, reject) => {
       const path = this._stage.getPath();
       const keep = this._stage.getKeepReleases();
@@ -271,6 +294,32 @@ class FileSystemHelper {
       })
     });
   }
+  async updateSymlink(releasePath) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const path = this._stage.getPath();
+        const current = `${path}current`;
+        const exists = await this.sshExec(`cd ${current}`);
+        console.log(exists);
+        let command = `unlink ${current} && ln -s ${release} ${current}`;
+        if (!exists) {
+          command = `ln -s ${release} ${current}`;
+        }
+        const release = `${releasePath}`;
+        console.log(command);
+        this.sshExec(command, [])
+          .then((res) => {
+            this._logger.info(`Symlink created [unlink current && ln -s ${release} ${current}] `);
+            resolve(true);
+          })
+          .catch((err) => {
+            reject(err);
+          });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
 }
 
-module.exports = FileSystemHelper;
+module.exports = RemoteManager;

@@ -2,7 +2,7 @@ const fs = require("fs");
 const moment = require("moment");
 const Config = require("./config");
 const Rsync = require("./rsync");
-const FileSystem = require("./file_system");
+const RemoteManager = require("./remote_manager");
 const Logger = require("./logger");
 const Extractor = require("./extractor");
 
@@ -10,8 +10,8 @@ const logger = new Logger();
 logger.setVerbose(true);
 logger.setLogger(true);
 
-const fsManager = new FileSystem();
-fsManager.setLogger(logger);
+const remoteManager = new RemoteManager();
+remoteManager.setLogger(logger);
 
 class DeployerManager {
   constructor() {
@@ -35,16 +35,10 @@ class DeployerManager {
   setRelease(_release) {
     this._release = _release;
   }
-  fileSystem(config, host) {
-    const fileSystem = FileSystem.setLogger(logger)
-      .setHost(host)
-      .setStage(config);
-    return fileSystem;
-  }
-  folderStructure(fileSystem) {
+  folderStructure(remoteInstance) {
     return new Promise(async (resolve, reject) => {
       try {
-        const folderStructure = await fileSystem.checkFolderStructure();
+        const folderStructure = await remoteInstance.checkFolderStructure();
         if (!folderStructure) {
           reject(
             "Occurr an error creating folder structure, check permissions"
@@ -56,10 +50,10 @@ class DeployerManager {
       }
     });
   }
-  createRelease(fileSystem) {
+  createRelease(remoteInstance) {
     return new Promise(async (resolve, reject) => {
       try {
-        const createRelease = await fileSystem.createReleasePath();
+        const createRelease = await remoteInstance.createReleasePath();
         if (!createRelease) {
           logger.error("error creating release folder");
           reject(false);
@@ -162,9 +156,9 @@ class DeployerManager {
   }
   async taskCheck(config, host) {
     return new Promise((resolve, reject) => {
-      const fsManager = new FileSystem();
-      fsManager.setLogger(logger).setHost(host).setStage(config);
-      this.folderStructure(fsManager)
+      const remoteInstance = new RemoteManager();
+      remoteInstance.setLogger(logger).setHost(host).setStage(config);
+      this.folderStructure(remoteInstance)
         .then((res) => {
           resolve(true);
         })
@@ -176,14 +170,14 @@ class DeployerManager {
   }
   async taskRelease(config, host) {
     return new Promise((resolve, reject) => {
-      const fsManager = new FileSystem();
-      fsManager.setLogger(logger).setHost(host).setStage(config);
-      this.createRelease(fsManager)
+      const remoteInstance = new RemoteManager();
+      remoteInstance.setLogger(logger).setHost(host).setStage(config);
+      this.createRelease(remoteInstance)
         .then((releaseFolder) => {
-          this.setRelease(releaseFolder)
+          this.setRelease(releaseFolder);
           const method = config.getMethod();
           this._update_callback = null;
-          switch(method) {
+          switch (method) {
             case "rsync":
               this._update_callback = this.updateCodeRsync;
               break;
@@ -192,12 +186,12 @@ class DeployerManager {
           }
           this._update_callback(config, host, releaseFolder)
             .then((res) => {
-              logger.success({result: res});
+              logger.success({ result: res });
               resolve(res);
             })
             .catch((err) => {
               reject(err);
-            })
+            });
         })
         .catch((err) => {
           logger.error(err);
@@ -220,28 +214,29 @@ class DeployerManager {
         })
         .catch((err) => {
           reject(err);
-        })
+        });
       resolve(true);
     });
   }
   async taskSymlink(config, host) {
     return new Promise((resolve, reject) => {
-      const fsManager = new FileSystem();
-      fsManager.setLogger(logger)
-        .setHost(host)
-        .setStage(config);
-
-      console.log(`symlink`, this._release)
-      resolve(true);
+      const remoteManager = new RemoteManager();
+      remoteManager.setLogger(logger).setHost(host).setStage(config);
+      remoteManager.updateSymlink(this._release)
+        .then((res) => {
+          resolve(true);    
+        })
+        .catch((err) => {
+          reject(err);
+        });
     });
   }
   async taskClear(config, host) {
     return new Promise((resolve, reject) => {
-      const fsManager = new FileSystem();
-      fsManager.setLogger(logger)
-        .setHost(host)
-        .setStage(config);
-      fsManager.clearReleases()
+      const remoteInstance = new RemoteManager();
+      remoteInstance.setLogger(logger).setHost(host).setStage(config);
+      remoteInstance
+        .clearReleases()
         .then((res) => {
           resolve(res);
         })
