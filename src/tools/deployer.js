@@ -60,41 +60,10 @@ class DeployerManager {
         }
         resolve(createRelease);
       } catch (err) {
-        console.error(err);
+        logger.error(err);
         reject(false);
       }
     });
-  }
-  async executeTask2(stageConfig, host) {
-    const fileSystem = this.fileSystem(stageConfig, host);
-    // Check folder structure
-    const folderStructure = await this.folderStructure(fileSystem);
-    if (folderStructure !== true) {
-      throw folderStructure;
-    }
-
-    // Create release folder
-    const createRelease = await this.createRelease(fileSystem);
-    if (!createRelease) {
-      throw "Not able to create release folder";
-    }
-
-    // Upload build path
-    const path = stageConfig && stageConfig._config.project_path;
-    const origin = `${process.cwd()}/${path}`;
-    const username = stageConfig.getUsername();
-    const exclude = stageConfig.getExclude();
-    const rsync = new Rsync();
-    const resultRsync = await rsync
-      .setLogger(logger)
-      .source(origin)
-      .user(username)
-      .setExclude(exclude)
-      .destinationHost(host)
-      .destinationPath(createRelease)
-      .sync();
-
-    // console.log(resultRsync);
   }
   async executeTask(config, host, task) {
     return new Promise((resolve, reject) => {
@@ -111,22 +80,25 @@ class DeployerManager {
           break;
         case "deploy:update_code":
           this._task_callback = this.taskUpdateCode;
+        case "deploy:clear":
+        case "deploy:success":
         default:
           break;
       }
       if (!this._task_callback) {
-        logger.info({task: task, status: "skipped"});
+        logger.info({ task: task, status: "skipped" });
         resolve(true);
       }
+      logger.info({ task: task, status: "processing" });
       this._task_callback(config, host)
         .then((res) => {
-          logger.success({task: task, host: host, completed: true});
+          logger.success({ task: task, host: host, completed: true });
           resolve(true);
         })
         .catch((err) => {
           logger.error(err);
           reject(err);
-        })
+        });
     });
   }
   async executeAllTasks(config) {
@@ -135,11 +107,16 @@ class DeployerManager {
         let results = [];
         const hosts = config.getHost();
         const tasks = config.getTasks();
+        logger.info(tasks);
         while (tasks.length > 0) {
           const task = tasks.shift();
           Promise.all(hosts.map((host) => this.executeTask(config, host, task)))
             .then((res) => {
-              logger.success({ task: task, hosts: hosts.length, completed: true });
+              logger.success({
+                task: task,
+                hosts: hosts.length,
+                completed: true,
+              });
               resolve(res);
             })
             .catch((err) => {
@@ -157,12 +134,9 @@ class DeployerManager {
       const stageConfig = this.stageConfig();
       const date = moment().format("YYYY/MM/DD hh:mm:ss");
       const app = stageConfig.getApplication();
-      logger.info(
-        `Processing deployment ${app} ${date} `
-      );
+      logger.info(`Processing deployment ${app} ${date} `);
       this.executeAllTasks(stageConfig)
         .then((res) => {
-          console.log(res);
           resolve(res);
         })
         .catch((err) => {
@@ -206,7 +180,26 @@ class DeployerManager {
   }
   async taskUpdateCode(config, host) {
     return new Promise((resolve, reject) => {
-      resolve(true);
+      const path = config && config.getProjectPath();
+      const origin = `${process.cwd()}/${path}`;
+      const username = config.getUsername();
+      const exclude = config.getExclude();
+      const rsync = new Rsync();
+      rsync
+        .setLogger(logger)
+        .source(origin)
+        .user(username)
+        .setExclude(exclude)
+        .destinationHost(host)
+        .destinationPath(createRelease)
+        .sync()
+        .then((result) => {
+          resolve(true);
+        })
+        .catch((err) => {
+          logger.error("rsync error");
+          reject(err);
+        });
     });
   }
 }

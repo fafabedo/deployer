@@ -54,7 +54,6 @@ class RsyncManager {
     return new Promise((resolve, reject) => {
       const destination = `${this._user}@${this._destination_host}:${this._destination_path}`;
       const rsync = new Rsync()
-        .set("progress")
         .shell(this._shell)
         .flags(this._flags)
         .source(this._source)
@@ -73,7 +72,7 @@ class RsyncManager {
           logData += data;
         },
         (err) => {
-          this._logger.error(err);
+          this._logger.error({class: "rsync", error: err});
           logData += err;
         }
       );
