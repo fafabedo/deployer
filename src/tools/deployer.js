@@ -56,6 +56,7 @@ class DeployerManager {
       try {
         const createRelease = await fileSystem.createReleasePath();
         if (!createRelease) {
+          logger.error("error creating release folder");
           reject(false);
         }
         resolve(createRelease);
@@ -78,8 +79,6 @@ class DeployerManager {
         case "deploy:release":
           this._task_callback = this.taskRelease;
           break;
-        case "deploy:update_code":
-          this._task_callback = this.taskUpdateCode;
         case "deploy:clear":
         case "deploy:success":
         default:
@@ -88,6 +87,7 @@ class DeployerManager {
       if (!this._task_callback) {
         logger.info({ task: task, status: "skipped" });
         resolve(true);
+        return;
       }
       logger.info({ task: task, status: "processing" });
       this._task_callback(config, host)
@@ -101,28 +101,30 @@ class DeployerManager {
         });
     });
   }
+  async executeTaskAllHosts(config, hosts, task) {
+    return new Promise((resolve, reject) => {
+      Promise.all(hosts.map((host) => this.executeTask(config, host, task)))
+        .then((res) => {
+          resolve(res);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  }
   async executeAllTasks(config) {
     return new Promise(async (resolve, reject) => {
       try {
         let results = [];
         const hosts = config.getHost();
         const tasks = config.getTasks();
-        logger.info(tasks);
+        logger.info({ tasks: tasks });
         while (tasks.length > 0) {
           const task = tasks.shift();
-          Promise.all(hosts.map((host) => this.executeTask(config, host, task)))
-            .then((res) => {
-              logger.success({
-                task: task,
-                hosts: hosts.length,
-                completed: true,
-              });
-              resolve(res);
-            })
-            .catch((err) => {
-              logger.error(err);
-            });
+          const resp = await this.executeTaskAllHosts(config, hosts, task);
+          results.push(resp);
         }
+        logger.info("all task completed");
         resolve(results);
       } catch (e) {
         reject(e);
@@ -164,8 +166,24 @@ class DeployerManager {
       const fsManager = new FileSystem();
       fsManager.setLogger(logger).setHost(host).setStage(config);
       this.createRelease(fsManager)
-        .then((res) => {
-          resolve(res);
+        .then((releaseFolder) => {
+          const method = config.getMethod();
+          this._update_callback = null;
+          switch(method) {
+            case "rsync":
+              this._update_callback = this.updateCodeRsync;
+              break;
+            default:
+              break;
+          }
+          this._update_callback(config, host, releaseFolder)
+            .then((res) => {
+              logger.success({result: res});
+              resolve(res);
+            })
+            .catch((err) => {
+              reject(err);
+            })
         })
         .catch((err) => {
           logger.error(err);
@@ -178,7 +196,14 @@ class DeployerManager {
       resolve(true);
     });
   }
-  async taskUpdateCode(config, host) {
+  async taskClear(config, host) {
+    return new Promise((resolve, reject) => {
+      const fsManager = new FileSystem();
+      fsManager.setLogger(logger).setHost(host).setStage(config);
+      const releases = fsManager.getListReleases();
+    });
+  }
+  async updateCodeRsync(config, host, releaseFolder) {
     return new Promise((resolve, reject) => {
       const path = config && config.getProjectPath();
       const origin = `${process.cwd()}/${path}`;
@@ -191,10 +216,10 @@ class DeployerManager {
         .user(username)
         .setExclude(exclude)
         .destinationHost(host)
-        .destinationPath(createRelease)
+        .destinationPath(releaseFolder)
         .sync()
         .then((result) => {
-          resolve(true);
+          resolve(result);
         })
         .catch((err) => {
           logger.error("rsync error");
