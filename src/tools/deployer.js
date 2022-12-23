@@ -5,7 +5,7 @@ const fs = require("fs");
 const Logger = require("./logger");
 
 const logger = new Logger();
-logger.setVerbose(false);
+logger.setVerbose(true);
 logger.setLogger(true);
 
 class DeployerManager {
@@ -82,6 +82,7 @@ class DeployerManager {
     const exclude = stageConfig.exclude();
     const rsync = new Rsync();
     const resultRsync = await rsync
+      .setLogger(logger)
       .source(origin)
       .user(username)
       .setExclude(exclude)

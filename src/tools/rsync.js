@@ -7,7 +7,7 @@ class RsyncManager {
     this._shell = "ssh";
     this._flags = "azr";
     this._env = null;
-    this._log_folder = null;
+    this._logger = null;
     this._user = null;
     this._password = null;
     this._destination_host = "127.0.0.1";
@@ -24,6 +24,10 @@ class RsyncManager {
   }
   flags(_flags) {
     this._flags = _flags;
+    return this;
+  }
+  setLogger(_logger) {
+    this._logger = _logger;
     return this;
   }
   user(_user) {
@@ -49,7 +53,6 @@ class RsyncManager {
   sync() {
     return new Promise((resolve, reject) => {
       const destination = `${this._user}@${this._destination_host}:${this._destination_path}`;
-      // console.log(destination);
       const rsync = new Rsync()
         .set("progress")
         .shell(this._shell)
@@ -60,7 +63,7 @@ class RsyncManager {
         rsync.exclude(this._exclude);
       }
       const command = rsync.command();
-      console.log(command);
+      this._logger.info({rsync_command: command});
       let logData;
       rsync.execute(
         (error, code, cmd) => {
@@ -70,6 +73,7 @@ class RsyncManager {
           logData += data;
         },
         (err) => {
+          this._logger.error(err);
           logData += err;
         }
       );
