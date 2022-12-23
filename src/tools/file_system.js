@@ -25,27 +25,27 @@ class FileSystemHelper {
     return this;
   }
   getCredentials() {
-    if (this._stage.password()) {
+    if (this._stage.getPassword()) {
       return {
         host: this._host,
-        username: this._stage.username(),
-        password: this._stage.password(),
+        username: this._stage.getUsername(),
+        password: this._stage.getPassword(),
       };
     }
-    if (this._stage.privatekey()) {
+    if (this._stage.getPrivatekey()) {
       return {
         host: this._host,
-        username: this._stage.username(),
-        privateKeyPath: this._stage.privatekey(),
+        username: this._stage.getUsername(),
+        privateKeyPath: this._stage.getPrivatekey(),
       };
     }
   }
   getReleasesPath() {
-    const path = this._stage.path();
+    const path = this._stage.getPath();
     return `${path}releases`;
   }
   getSharedPath() {
-    const path = this._stage.path();
+    const path = this._stage.getPath();
     return `${path}shared`;
   }
   ssh() {
@@ -105,7 +105,7 @@ class FileSystemHelper {
   }
   checkPermissions() {
     return new Promise((resolve, reject) => {
-      const path = this._stage.path();
+      const path = this._stage.getPath();
       this.sshExec(`touch _perm.txt`, path)
         .then((result) => {
           if (result.stdout) {
@@ -183,7 +183,7 @@ class FileSystemHelper {
   }
   getListReleases() {
     return new Promise((resolve, reject) => {
-      this.sshExec(`ls -c -d -1 releases/*`, this._stage.path())
+      this.sshExec(`ls -c -d -1 releases/*`, this._stage.getPath())
         .then((result) => {
           if (result.code === 1) {
             reject(result.stderr);
@@ -210,7 +210,7 @@ class FileSystemHelper {
   }
   createReleasePath() {
     return new Promise(async (resolve, reject) => {
-      const path = this._stage.path();
+      const path = this._stage.getPath();
       this.getListReleases()
       .then(async (releases) => {
         const last_release = releases && releases[0];
@@ -233,4 +233,4 @@ class FileSystemHelper {
   }
 }
 
-module.exports = new FileSystemHelper();
+module.exports = FileSystemHelper;

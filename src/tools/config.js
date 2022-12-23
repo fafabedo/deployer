@@ -64,7 +64,7 @@ class ConfigManager {
   tasks() {
     return (
       this._config && this._config.tasks || [
-        "deploy:extrÒact",
+        "deploy:extract",
         "deploy:release",
         "deploy:shared",
         "deploy:success",

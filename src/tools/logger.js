@@ -33,16 +33,17 @@ class Logger {
     if (this._verbose) {
       switch(type) {
         case 'info':
-          console.log(chalk.white(message));
+        default:
+          console.log(chalk.whiteBright(message));
           break;
         case 'warning':
           console.log(chalk.yellow(message));
           break;
         case 'error':
-          console.log(message);
+          console.log(chalk.red(message));
           break;
         case 'success':
-          console.log(message);
+          console.log(chalk.green(message));
           break;
       }
     }

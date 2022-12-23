@@ -24,47 +24,57 @@ class Stage {
   group() {
     return this._group;
   }
-  host() {
+  getHost() {
     return this._host;
   }
-  username() {
+  getUsername() {
     return this._username;
   }
-  password() {
+  getPassword() {
     return this._password;
   }
-  privateKey() {
+  getPrivateKey() {
     return this._private_key;
   }
-  path() {
+  getPath() {
     return this._path;
   }
-  application() {
-    return this._config && this._config.application;
+  getApplication() {
+    return this._config && this._config.application || "app";
   }
   getProjectPath() {
-    return this._config && this._config.project_path;
+    return this._config && this._config.project_path || "/";
   }
-  keepReleases() {
-    return this._config && this._config.keepReleases();
+  getKeepReleases() {
+    return this._config && this._config.keep_releases || 5;
   }
-  method() {
-    return this._config && this._config.method();
+  getMethod() {
+    return this._config && this._config.method || "rsync";
   }
-  exclude() {
-    return this._config && this._config.exclude;
+  getExclude() {
+    return this._config && this._config.exclude || [];
   }
-  sharedDirs() {
-    return this._config && this._config.sharedDirs();
+  getSharedDirs() {
+    return this._config && this._config.share_dirs || [];
   }
-  sharedFiles() {
-    return this._config && this._config.sharedFiles();
+  getSharedFiles() {
+    return this._config && this._config.shared_files;
   }
-  extractSource() {
-    return this._config && this._config.extractSource();
+  getExtractSource() {
+    return this._config && this._config.extract_source;
   }
-  extractDestination() {
-    return this._config && this._config.extractDestination();
+  getExtractDestination() {
+    return this._config && this._config.extract_destination;
+  }
+  getTasks() {
+    return this._config && this._config.tasks || [
+      "deploy:extract",
+      "deploy:release",
+      "deploy:shared",
+      "deploy:symlink",
+      "deploy:house_keeper",
+      "deploy:success",
+    ];
   }
 }
 

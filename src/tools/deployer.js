@@ -8,6 +8,9 @@ const logger = new Logger();
 logger.setVerbose(true);
 logger.setLogger(true);
 
+const fsManager = new FileSystem();
+fsManager.setLogger(logger);
+
 class DeployerManager {
   constructor() {
     this._config = null;
@@ -78,8 +81,8 @@ class DeployerManager {
     // Upload build path
     const path = stageConfig && stageConfig._config.project_path;
     const origin = `${process.cwd()}/${path}`;
-    const username = stageConfig.username();
-    const exclude = stageConfig.exclude();
+    const username = stageConfig.getUsername();
+    const exclude = stageConfig.getExclude();
     const rsync = new Rsync();
     const resultRsync = await rsync
       .setLogger(logger)
@@ -92,15 +95,47 @@ class DeployerManager {
 
     // console.log(resultRsync);
   }
-  async executeAllTasks(stageConfig) {
+  async executeTask(config, host, task) {
+    return new Promise((resolve, reject) => {
+      this._task_callback = null;
+      switch (task) {
+        case "deploy:check":
+          this._task_callback = this.taskCheck;
+          break;
+        case "deploy:release":
+          this._task_callback = this.taskRelease;
+          break;
+        default:
+          break;
+      }
+      if (!this._task_callback) {
+        logger.info({task: task, status: "skipped"});
+      }
+      this._task_callback(config, host)
+        .then((res) => {
+          logger.success({task: task, host: host, completed: true});
+        })
+        .catch((err) => {
+          logger.error(err);
+        })
+    });
+  }
+  async executeAllTasks(config) {
     return new Promise(async (resolve, reject) => {
       try {
         let results = [];
-        const hosts = stageConfig.host();
-        while (hosts.length > 0) {
-          const host = hosts.shift();
-          const resp = await this.executeTask(stageConfig, host);
-          results.push(resp);
+        const hosts = config.getHost();
+        const tasks = config.getTasks();
+        while (tasks.length > 0) {
+          const task = tasks.shift();
+          Promise.all(hosts.map((host) => this.executeTask(config, host, task)))
+            .then((res) => {
+              logger.success({ task: task, hosts: hosts.length, completed: true });
+              resolve(res);
+            })
+            .catch((err) => {
+              logger.error(err);
+            });
         }
         resolve(results);
       } catch (e) {
@@ -108,9 +143,12 @@ class DeployerManager {
       }
     });
   }
-  execute() {
+  async execute() {
     return new Promise((resolve, reject) => {
       const stageConfig = this.stageConfig();
+      logger.info(
+        `Deployment ${stageConfig.getApplication()} 11-22-2022 - 11:11:22 `
+      );
       this.executeAllTasks(stageConfig)
         .then((res) => {
           console.log(res);
@@ -118,6 +156,34 @@ class DeployerManager {
         })
         .catch((err) => {
           console.error(err);
+          reject(err);
+        });
+    });
+  }
+  async taskCheck(config, host) {
+    return new Promise((resolve, reject) => {
+      const fsManager = new FileSystem();
+      fsManager.setLogger(logger).setHost(host).setStage(config);
+      this.folderStructure(fsManager)
+        .then((res) => {
+          resolve(true);
+        })
+        .catch((err) => {
+          logger.error(err);
+          reject(err);
+        });
+    });
+  }
+  async taskRelease(config, host) {
+    return new Promise((resolve, reject) => {
+      const fsManager = new FileSystem();
+      fsManager.setLogger(logger).setHost(host).setStage(config);
+      this.createRelease(fsManager)
+        .then((res) => {
+          resolve(res);
+        })
+        .catch((err) => {
+          logger.error(err);
           reject(err);
         });
     });
