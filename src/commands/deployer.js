@@ -16,6 +16,14 @@ module.exports = async function ({config, stage}) {
   Deployer
     .stage(stage)
     .config(configFile)
-    .execute();
+    .execute()
+    .then((res) => {
+      // console.log(res);
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.log(err);
+      process.exit(0);
+    })
 };
 

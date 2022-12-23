@@ -1,5 +1,5 @@
-const yaml = require('js-yaml');
-const fs   = require('fs');
+const yaml = require("js-yaml");
+const fs = require("fs");
 const Stage = require("./stage");
 
 class ConfigManager {
@@ -12,10 +12,9 @@ class ConfigManager {
       this._source = source;
     }
     try {
-      const file = fs.readFileSync(this._source, 'utf8');
+      const file = fs.readFileSync(this._source, "utf8");
       this._config = yaml.load(file);
-    }
-    catch (e) {
+    } catch (e) {
       console.error(e);
     }
     return this;
@@ -23,31 +22,55 @@ class ConfigManager {
   config() {
     return this._config;
   }
+  application() {
+    return this._config && this._config.application || "app";
+  }
+  keepReleases() {
+    return this._config && this._config.keep_releases || 5;
+  }
   method() {
-    return this._config.method || 'rsync';
+    return this._config && this._config.method || "rsync";
   }
   projectPath() {
-    return this._config.project_path || "/";
+    return this._config && this._config.project_path || "/";
   }
-  pluginsPath() {
-    return this._config.project_path || "/";
+  exclude() {
+    return this._config && this._config.exclude || null;
+  }
+  sharedDirs() {
+    return this._config && this._config.share_dirs || [];
+  }
+  sharedFiles() {
+    return this._config && this._config.shared_files || [];
+  }
+  extractSource() {
+    return this._config && this._config.extract_source || "html/extractor/packages";
+  }
+  extractDestination() {
+    return this._config && this._config.extract_destination || "html/wp-content/plugins";
   }
   stages() {
     const stages = this._config.stages;
     if (stages) {
       this._config.stages = [];
-      stages.forEach(item => {
+      stages.forEach((item) => {
         const stage = new Stage();
-        stage.load(item);
+        stage.load(item, this._config);
         this._config.stages.push(stage);
-      })
+      });
     }
     return this._config.stages || [];
   }
-  exclude() {
-    return this._config.exclude || [];
+  tasks() {
+    return (
+      this._config && this._config.tasks || [
+        "deploy:extrÒact",
+        "deploy:release",
+        "deploy:shared",
+        "deploy:success",
+      ]
+    );
   }
-
 }
 
 module.exports = new ConfigManager();
