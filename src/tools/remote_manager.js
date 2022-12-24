@@ -183,7 +183,7 @@ class RemoteManager {
   }
   async removeFolder(path) {
     return new Promise((resolve, reject) => {
-      this._logger.info(`Creating folder [${path}] ...`);
+      this._logger.info(`Removing folder [${path}] ...`);
       this.sshExecCommand(`rm -rf ${path}`)
         .then((result) => {
           this._logger.info(`[${path}] folder removed`);
@@ -299,17 +299,15 @@ class RemoteManager {
       try {
         const path = this._stage.getPath();
         const current = `${path}current`;
-        const exists = await this.sshExec(`cd ${current}`);
-        console.log(exists);
-        let command = `unlink ${current} && ln -s ${release} ${current}`;
-        if (!exists) {
-          command = `ln -s ${release} ${current}`;
+        let command = `unlink ${current} && ln -s ${releasePath} ${current}`;
+        const exists = await this.sshExecCommand(`cd ${current}`);
+        if (exists.code === 1) {
+          command = `ln -s ${releasePath} ${current}`;
         }
-        const release = `${releasePath}`;
-        console.log(command);
+        this._logger.info(command);
         this.sshExec(command, [])
           .then((res) => {
-            this._logger.info(`Symlink created [unlink current && ln -s ${release} ${current}] `);
+            this._logger.info(`Symlink created [unlink current && ln -s ${releasePath} ${current}] `);
             resolve(true);
           })
           .catch((err) => {
