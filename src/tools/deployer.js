@@ -84,9 +84,15 @@ class DeployerManager {
         case "deploy:symlink":
           this._task_callback = this.taskSymlink;
           break;
+        case "deploy:shared":
+          this._task_callback = this.taskShared;
+          break;
         case "deploy:success":
-          logger.success({ task: task, host: host, completed: true });
-          resolve(true);
+          this._task_callback = function() {
+            return new Promise((resolve, reject) => {
+              resolve(true);
+            })
+          };
           break;
         default:
           break;
@@ -131,7 +137,7 @@ class DeployerManager {
           const resp = await this.executeTaskAllHosts(config, hosts, task);
           results.push(resp);
         }
-        logger.info("all task completed");
+        logger.info("All task completed");
         resolve(results);
       } catch (e) {
         reject(e);
@@ -174,6 +180,7 @@ class DeployerManager {
       remoteInstance.setLogger(logger).setHost(host).setStage(config);
       this.createRelease(remoteInstance)
         .then((releaseFolder) => {
+          logger.success(`Release has been created [${releaseFolder}]`)
           this.setRelease(releaseFolder);
           const method = config.getMethod();
           this._update_callback = null;
@@ -222,9 +229,10 @@ class DeployerManager {
     return new Promise((resolve, reject) => {
       const remoteManager = new RemoteManager();
       remoteManager.setLogger(logger).setHost(host).setStage(config);
-      remoteManager.updateSymlink(this._release)
+      remoteManager
+        .updateSymlink(this._release)
         .then((res) => {
-          resolve(true);    
+          resolve(true);
         })
         .catch((err) => {
           reject(err);
@@ -243,6 +251,17 @@ class DeployerManager {
         .catch((err) => {
           reject(err);
         });
+    });
+  }
+  async taskShared(config, host) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const dirs = await this.subTaskShareDirs(config, host);
+        const files = await this.subTaskShareFiles(config, host);
+        resolve(true);
+      } catch (err) {
+        reject(err)
+      }
     });
   }
   async updateCodeRsync(config, host, releaseFolder) {
@@ -267,6 +286,54 @@ class DeployerManager {
           logger.error("rsync error");
           reject(err);
         });
+    });
+  }
+  async subTaskShareDirs(config, host) {
+    return new Promise(async (resolve, reject) => {
+      const remoteInstance = new RemoteManager();
+      remoteInstance.setLogger(logger).setHost(host).setStage(config);
+      const sharedDirs = config.getSharedDirs();
+      while (sharedDirs.length > 0) {
+        const directory = sharedDirs.shift();
+        const result = await remoteInstance.sharedDirectory(directory, this._release);
+        if (!result) {
+          reject(result);
+        }
+      }
+      resolve(true);
+      // Promise.all(
+      //   sharedDirs.map((directory) => remoteInstance.sharedDirectory(directory, this._release))
+      // )
+      //   .then((res) => {
+      //     resolve(true);
+      //   })
+      //   .catch((err) => {
+      //     reject(err);
+      //   });
+    });
+  }
+  async subTaskShareFiles(config, host) {
+    return new Promise(async (resolve, reject) => {
+      const remoteInstance = new RemoteManager();
+      remoteInstance.setLogger(logger).setHost(host).setStage(config);
+      const sharedFiles = config.getSharedFiles();
+      while (sharedFiles.length > 0) {
+        const file = sharedFiles.shift();
+        const result = await remoteInstance.sharedFile(file, this._release);
+        if (!result) {
+          reject(result);
+        }
+      }
+      resolve(true);
+      // Promise.all(
+      //   sharedFiles.map((file) => remoteInstance.sharedFile(file, this._release))
+      // )
+      //   .then((res) => {
+      //     resolve(true);
+      //   })
+      //   .catch((err) => {
+      //     reject(err);
+      //   });
     });
   }
 }

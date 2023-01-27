@@ -167,6 +167,60 @@ class RemoteManager {
         });
     });
   }
+  async checkFile(path) {
+    return new Promise((resolve, reject) => {
+      this._logger.info(`Checking file [${path}] ...`);
+      this.sshExecCommand(`stat -f ${path}`)
+        .then((result) => {
+          if (result.stdout) {
+            this._logger.info(`[${path}] file exists`);
+            resolve(true);
+          }
+          if (result.stderr) {
+            resolve(false);
+          }
+          reject(false);
+        })
+        .catch((err) => {
+          this._logger.error(err);
+          reject(false);
+        });
+    });
+  }
+  async createEmptyFile(path) {
+    return new Promise((resolve, reject) => {
+      this._logger.info(`Creating file [${path}] ...`);
+      this.sshExecCommand(`touch ${path}`)
+        .then((result) => {
+          if (result.stdout) {
+            this._logger.info(`[${path}] file created`);
+            resolve(true);
+          }
+          if (result.stderr) {
+            resolve(false);
+          }
+          reject(false);
+        })
+        .catch((err) => {
+          this._logger.error(err);
+          reject(false);
+        });
+    });
+  }
+  async removeFile(path) {
+    return new Promise((resolve, reject) => {
+      this._logger.info(`Removing file [${path}] ...`);
+      this.sshExecCommand(`rm -f ${path}`)
+        .then((result) => {
+          this._logger.info(`[${path}] file removed`);
+          resolve(true);
+        })
+        .catch((err) => {
+          this._logger.error(err);
+          reject(false);
+        });
+    });
+  }
   async createFolder(path) {
     return new Promise((resolve, reject) => {
       this._logger.info(`Creating folder [${path}] ...`);
@@ -300,8 +354,8 @@ class RemoteManager {
         const path = this._stage.getPath();
         const current = `${path}current`;
         let command = `unlink ${current} && ln -s ${releasePath} ${current}`;
-        const exists = await this.sshExecCommand(`cd ${current}`);
-        if (exists.code === 1) {
+        const exists = await this.checkFolder(current);
+        if (!exists) {
           command = `ln -s ${releasePath} ${current}`;
         }
         this._logger.info(command);
@@ -316,6 +370,57 @@ class RemoteManager {
       } catch (err) {
         reject(err);
       }
+    });
+  }
+  async sharedDirectory(sourcePath, releasePath) {
+    return new Promise(async (resolve, reject) => {
+      const mainPath = this._stage.getPath();
+      const source = `${mainPath}shared/${sourcePath}`
+      const destination = `${releasePath}/${sourcePath}`;
+      const exists = await this.checkFolder(source);
+      if (!exists) {
+        const created = await this.createFolder(source);
+      }
+      const destExists = await this.checkFolder(destination);
+      if (!!destExists) {
+        const removed = await this.removeFolder(destination);
+      }
+      const command = `ln -s ${source} ${destination}`;
+      this.sshExec(command, [])
+        .then((res) => {
+          this._logger.info(`Symlink created [${command}]`);
+          resolve(true);
+        })
+        .catch((err) => {
+          this._logger.error("sharedDirectory error " + err.message)
+          reject(err);
+        });
+    });
+  }
+  async sharedFile(sourcePath, releasePath) {
+    return new Promise(async (resolve, reject) => {
+      const mainPath = this._stage.getPath();
+      const source = `${mainPath}shared/${sourcePath}`
+      const destination = `${releasePath}/${sourcePath}`;
+      const exists = await this.checkFile(source);
+      if (!exists) {
+        const created = await this.createEmptyFile(source);
+      }
+      console.log(destination);
+      const destExists = await this.checkFile(destination);
+      if (!!destExists) {
+        const removed = await this.removeFile(destination);
+      }
+      const command = `ln -s ${source} ${destination}`;
+      this.sshExec(command, [])
+        .then((res) => {
+          this._logger.info(`Symlink created [${command}]`);
+          resolve(true);
+        })
+        .catch((err) => {
+          this._logger.error("sharedFile error " + err.message)
+          reject(err);
+        });
     });
   }
 }

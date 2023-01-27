@@ -44,7 +44,7 @@ class Extractor {
             await extract(`${source}/${file}`, { dir: destination });
           }
         });
-        this._logger && this._logger.info("Extraction complete");
+        this._logger && this._logger.info("Extraction completed");
         resolve(true);
       } catch (err) {
         this._logger.error(err);
