@@ -21,6 +21,7 @@ module.exports = async function ({config}) {
   const extractor = new Extractor();
   const source = _config.getExtractSource();
   const destination = _config.getExtractDestination();
+  const dep = await logger.createDepFolder();
   extractor
     .setLogger(logger)
     .setSource(source)
@@ -28,11 +29,9 @@ module.exports = async function ({config}) {
     .execute()
     .then((res) => {
       console.log("Task completed");
-      // resolve(true);
       process.exit(0);
     })
     .catch((err) => {
-      // reject(err);
       console.log(err);
       process.exit(1);
     });

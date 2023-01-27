@@ -16,6 +16,27 @@ class Logger {
   setFolder(_folder) {
     this._folder = _folder;
   }
+  createDepFolder() {
+    return new Promise((resolve, reject) => {
+      try {
+        const root = process.cwd();
+        const folder = `${root}/.dep`;
+        if (!fs.existsSync(folder)) {
+          fs.mkdirSync(folder);
+        }
+        resolve(folder);
+        // fs.existsSync(folder, (exists) => {
+        //   console.log(folder, {exists: !!exists} );
+        //   if (!exists) {
+        //     fs.mkdirSync(folder);
+        //   }
+        // });
+        // resolve(folder);
+      } catch(e) {
+        reject(e);
+      }
+    });
+  }
   initFile() {
     const root = process.cwd();
     const folder = this._folder || `${root}/.dep`;
@@ -54,7 +75,8 @@ class Logger {
     }
     if (this._logger) {
       const logFile = this.initFile();
-      const text= JSON.stringify(message);
+      const text = JSON.stringify(message);
+      console.log(logFile, text);
       fs.appendFile(logFile, `[${type}] ${text}\r\n`, (err) => {
         if (err) {
           console.log(err);
