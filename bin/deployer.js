@@ -58,6 +58,7 @@ program
   .command("extract:plugins")
   .alias("extract")
   .description("Extract plugins")
+  .option("-c, --config <config>", "Configuration file")
   .action(getLocalScript("extractor"));
 
 program

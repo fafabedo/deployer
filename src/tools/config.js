@@ -43,10 +43,10 @@ class ConfigManager {
   sharedFiles() {
     return this._config && this._config.shared_files || [];
   }
-  extractSource() {
+  getExtractSource() {
     return this._config && this._config.extract_source || "html/extractor/packages";
   }
-  extractDestination() {
+  getExtractDestination() {
     return this._config && this._config.extract_destination || "html/wp-content/plugins";
   }
   stages() {
