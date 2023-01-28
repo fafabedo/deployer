@@ -25,13 +25,6 @@ class Logger {
           fs.mkdirSync(folder);
         }
         resolve(folder);
-        // fs.existsSync(folder, (exists) => {
-        //   console.log(folder, {exists: !!exists} );
-        //   if (!exists) {
-        //     fs.mkdirSync(folder);
-        //   }
-        // });
-        // resolve(folder);
       } catch(e) {
         reject(e);
       }

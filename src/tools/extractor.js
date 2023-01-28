@@ -1,4 +1,5 @@
-const extract = require("extract-zip");
+"use strict";
+const extract = require('extract-zip');
 const fs = require("fs");
 
 class Extractor {
@@ -47,6 +48,7 @@ class Extractor {
         this._logger && this._logger.info("Extraction completed");
         resolve(true);
       } catch (err) {
+        console.log(error);
         this._logger.error(err);
         reject(err);
       }
