@@ -29,6 +29,21 @@ class Extractor {
     }
     return null;
   }
+  async extractFile(file, destination) {
+    return new Promise(async (resolve, reject) => {
+      try {
+          const source = process.cwd() + "/" + this._source + "/" + file;
+          this._logger && this._logger.info(`Extracting package | source: ${source} | target ${destination}`);
+          await extract(source, { dir: destination });
+          this._logger && this._logger.info(`Extract finished successfully: ${file}`);
+          resolve(file);
+      } catch (err) {
+        // console.log(`extractFile`, err);
+        // console.error(err);
+        reject(err);
+      }
+    });
+  }
   async execute() {
     return new Promise((resolve, reject) => {
       try {
@@ -36,20 +51,33 @@ class Extractor {
         const source = process.cwd() + "/" + this._source;
         const destination = process.cwd() + "/" + this._destination;
         fs.readdirSync(source).forEach((file) => {
-          files.push(file);
+          const plugin = this.getFolderName(file)
+          if (plugin) {
+            files.push(file);
+          }
         });
+        Promise.all(
+          files.map((file) => this.extractFile(file, destination))
+        )
+          .then((res) => {
+            this._logger && this._logger.info("Extraction completed");
+            resolve(res)
+          })
+          .catch((err) => {
+            console.error(err);
+            throw "Extraction failed";
+          });
         files.forEach(async (file) => {
           let pluginName = this.getFolderName(file);
           if (pluginName) {
-            this._logger && this._logger.info(`Extracting package: ${file} | target ${destination} | plugin ${pluginName}`);
+            // this._logger && this._logger.info(`Extracting package: ${file} | target ${destination} | plugin ${pluginName}`);
             await extract(`${source}/${file}`, { dir: destination });
           }
         });
-        this._logger && this._logger.info("Extraction completed");
-        resolve(true);
+        resolve(files)
       } catch (err) {
-        console.log(error);
-        this._logger.error(err);
+        // console.log(`execute`, err);
+        // this._logger.error(err);
         reject(err);
       }
     })

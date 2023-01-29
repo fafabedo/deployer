@@ -69,7 +69,7 @@ class Logger {
     if (this._logger) {
       const logFile = this.initFile();
       const text = JSON.stringify(message);
-      console.log(logFile, text);
+      // console.log(logFile, text);
       fs.appendFile(logFile, `[${type}] ${text}\r\n`, (err) => {
         if (err) {
           console.log(err);

@@ -207,7 +207,7 @@ class DeployerManager {
     });
   }
   async taskExtract(config, host) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const extractor = new Extractor();
       const source = config.getExtractSource();
       const destination = config.getExtractDestination();
@@ -215,14 +215,14 @@ class DeployerManager {
         .setLogger(logger)
         .setSource(source)
         .setDestination(destination)
-        .execute()
-        .then((res) => {
-          resolve(true);
-        })
-        .catch((err) => {
-          reject(err);
-        });
-      resolve(true);
+      
+      const result = await extractor.execute();
+      if (result) {
+        resolve(true);
+      } else {
+        reject(result);
+      }
+      
     });
   }
   async taskSymlink(config, host) {
