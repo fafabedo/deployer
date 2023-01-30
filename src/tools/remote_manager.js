@@ -304,7 +304,6 @@ class RemoteManager {
       const path = this._stage.getPath();
       this.getListReleases()
       .then(async (releases) => {
-        console.log(releases);
         const last_release = releases && releases[0];
         const new_release = this.nextReleaseNumber(last_release);
         const releasePath = `${path}${new_release}`;
