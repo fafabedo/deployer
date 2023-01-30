@@ -304,6 +304,7 @@ class RemoteManager {
       const path = this._stage.getPath();
       this.getListReleases()
       .then(async (releases) => {
+        console.log(releases);
         const last_release = releases && releases[0];
         const new_release = this.nextReleaseNumber(last_release);
         const releasePath = `${path}${new_release}`;
@@ -327,6 +328,7 @@ class RemoteManager {
     return new Promise(async (resolve, reject) => {
       const path = this._stage.getPath();
       const keep = this._stage.getKeepReleases();
+      this._logger.info({path: path, keep: keep});
       this.getListReleases()
       .then(async (releases) => {
         if (releases.length <= keep) {
