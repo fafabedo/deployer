@@ -274,7 +274,7 @@ class RemoteManager {
   }
   async getListReleases() {
     return new Promise((resolve, reject) => {
-      this.sshExecCommand(`ls -c -d -1 releases/*`, this._stage.getPath())
+      this.sshExecCommand(`ls -turc -d -1 releases/*`, this._stage.getPath())
         .then((result) => {
           if (result.code === 1) {
             reject(result.stderr);
