@@ -327,7 +327,7 @@ class RemoteManager {
     return new Promise(async (resolve, reject) => {
       const path = this._stage.getPath();
       const keep = this._stage.getKeepReleases();
-      this._logger.info({path: path, keep: keep});
+      this._logger && this._logger.info({path: path, keep: keep});
       this.getListReleases()
       .then(async (releases) => {
         if (releases.length <= keep) {
