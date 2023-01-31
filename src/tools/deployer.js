@@ -267,10 +267,11 @@ class DeployerManager {
   async updateCodeRsync(config, host, releaseFolder) {
     return new Promise((resolve, reject) => {
       const path = config && config.getProjectPath();
-      const origin = `${path}`;
+      const origin = `${process.cwd()}${path}`;
       const username = config.getUsername();
       const exclude = config.getExclude();
       const rsync = new Rsync();
+      logger && logger.info({RSYNC: {origin: origin, host: host, destination: releaseFolder}});
       rsync
         .setLogger(logger)
         .source(origin)
