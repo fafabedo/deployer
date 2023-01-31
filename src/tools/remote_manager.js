@@ -274,7 +274,7 @@ class RemoteManager {
   }
   async getListReleases() {
     return new Promise((resolve, reject) => {
-      this.sshExecCommand(`ls -turc -d -1 releases/*`, this._stage.getPath())
+      this.sshExecCommand(`ls -c -d -1 releases/*`, this._stage.getPath())
         .then((result) => {
           if (result.code === 1) {
             reject(result.stderr);
@@ -286,6 +286,10 @@ class RemoteManager {
           reject(err);
         })
     })
+  }
+  sortReleasesByNumber(items) {
+    const results = items && items.sort();
+    return results.reverse();
   }
   nextReleaseNumber(release) {
     if (!release) {
@@ -304,7 +308,8 @@ class RemoteManager {
       const path = this._stage.getPath();
       this.getListReleases()
       .then(async (releases) => {
-        const last_release = releases && releases[0];
+        const items = this.sortReleasesByNumber(releases);
+        const last_release = items && items[0];
         const new_release = this.nextReleaseNumber(last_release);
         const releasePath = `${path}${new_release}`;
         const createReleasesFolder = await this.createFolder(releasePath);
