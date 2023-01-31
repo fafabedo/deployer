@@ -318,7 +318,7 @@ class RemoteManager {
           this._stage.setRelease(new_release);
           reject(false);
         }
-        this._logger && this._logger.info({release: {last: last_release, new: new_release, path: createReleasesFolder}});
+        this._logger && this._logger.info({RELEASE: {new_release: new_release, last_release: last_release, path: createReleasesFolder}});
         resolve(releasePath);
       })
       .catch(err => {
