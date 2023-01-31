@@ -267,7 +267,7 @@ class DeployerManager {
   async updateCodeRsync(config, host, releaseFolder) {
     return new Promise((resolve, reject) => {
       const path = config && config.getProjectPath();
-      const origin = `${process.cwd()}${path}`;
+      const origin = `${process.cwd()}/${path}`;
       const username = config.getUsername();
       const exclude = config.getExclude();
       const rsync = new Rsync();
