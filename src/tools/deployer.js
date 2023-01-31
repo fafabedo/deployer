@@ -267,7 +267,7 @@ class DeployerManager {
   async updateCodeRsync(config, host, releaseFolder) {
     return new Promise((resolve, reject) => {
       const path = config && config.getProjectPath();
-      const origin = `${process.cwd()}/${path}`;
+      const origin = `${path}`;
       const username = config.getUsername();
       const exclude = config.getExclude();
       const rsync = new Rsync();
@@ -278,6 +278,7 @@ class DeployerManager {
         .setExclude(exclude)
         .destinationHost(host)
         .destinationPath(releaseFolder)
+        // .set('delete')
         .sync()
         .then((result) => {
           resolve(result);
@@ -301,15 +302,6 @@ class DeployerManager {
         }
       }
       resolve(true);
-      // Promise.all(
-      //   sharedDirs.map((directory) => remoteInstance.sharedDirectory(directory, this._release))
-      // )
-      //   .then((res) => {
-      //     resolve(true);
-      //   })
-      //   .catch((err) => {
-      //     reject(err);
-      //   });
     });
   }
   async subTaskShareFiles(config, host) {
@@ -325,15 +317,6 @@ class DeployerManager {
         }
       }
       resolve(true);
-      // Promise.all(
-      //   sharedFiles.map((file) => remoteInstance.sharedFile(file, this._release))
-      // )
-      //   .then((res) => {
-      //     resolve(true);
-      //   })
-      //   .catch((err) => {
-      //     reject(err);
-      //   });
     });
   }
 }

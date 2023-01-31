@@ -7,7 +7,7 @@ logger.setVerbose(true);
 logger.setLogger(true);
 
 module.exports = async function ({config, stage}) {
-  // console.log(config)
+  console.log(process.cwd());
   if (!config) {
     console.log("Missing config file");
     process.exit(1);
